@@ -8,13 +8,13 @@ import axios from 'axios';
 // from the project root like
 // `node --env-file=.env path/to/script.js`
 // (This will be useful for running the solutions.)
-const API_KEY = process.env.api_key;
+// const API_KEY = process.env.api_key;
 
 // Alternatively, we can use the `dotenv` package to load the .env file
-// const dotEnv = require('dotenv');
+import dotEnv from 'dotenv';
 
-// dotEnv.config(); // Load variables from .env
-// const API_KEY = process.env.API_KEY; // Access the API_KEY from .env file
+dotEnv.config(); // Load variables from .env
+const API_KEY = process.env.API_KEY; // Access the API_KEY from .env file
 
 // single location call example
 const placeName = 'Great Wall of China';
@@ -29,18 +29,118 @@ const BASE_URL = 'https://us1.locationiq.com/v1/search';
 // the Great Wall of China. We'll use this to form the basis of our
 // solutions.
 
-axios.get(BASE_URL, {
-  params: {
-    key: API_KEY,
-    q: placeName,
-    format: 'json',
-  },
-})
-  .then(response => {
-    const { lat, lon } = response.data[0];
-    console.log({ lat, lon });
-    return;  // as configured, eslint requires a return statement
-  })
-  .catch(error => {
-    console.log(error);
+const wonders = [
+  'Great Wall of China',
+  'Petra',
+  'Colosseum',
+  'Chichen Itza',
+  'Machu Picchu',
+  'Taj Mahal',
+  'Christ the Redeemer',
+];
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Promise{lat, lon}
+// const getLatLonForPlace = (placeName) => {
+//   return axios.get(BASE_URL, {
+//     params: {
+//       key: API_KEY,
+//       q: placeName,
+//       format: 'json',
+//     },
+//   })
+//     .then(response => {
+//       const { lat, lon } = response.data[0]; // { lat: ..., lon: ..., ... }
+//       return { lat, lon };
+//     });
+// };
+
+const getLatLonForPlace = async (placeName) => {
+  const response = await axios.get(BASE_URL, {
+    params: {
+      key: API_KEY,
+      q: placeName,
+      format: 'json',
+    },
   });
+
+  const { lat, lon } = response.data[0]; // { lat: ..., lon: ..., ... }
+  return { lat, lon };
+};
+
+// const getLatLonForPlaces = (places) => {
+//   let steps = Promise.resolve();
+//   const result = {};
+
+//   for (const placeName of places) {
+//     steps = steps
+//       .then(() => {
+//         return getLatLonForPlace(placeName);
+//       })
+//       .then(({ lat, lon }) => {
+//         result[placeName] = {lat, lon};
+//         return wait(1000);
+//       });
+//   }
+
+//   return steps
+//     .then(() => {
+//       return result;
+//     });
+// };
+
+const getLatLonForPlaces = async (places) => {
+  const result = {};
+
+  for (const placeName of places) {
+    const latlon = await getLatLonForPlace(placeName);
+    result[placeName] = latlon;
+    await wait(1000);
+  }
+
+  return result;
+};
+
+// const main = () => {
+//   const result = {};
+
+//   for (const placeName of wonders) {
+//     const latlon = getLatLonForPlace(placeName);
+//     result[placeName] = latlon;
+//     sleep(1000);
+//   }
+// };
+
+// const main = () => {
+//   getLatLonForPlaces(wonders)
+//     .then(result => {
+//       console.log(result);
+//       return;
+//     })
+//     .catch(error => {
+//       console.log(error);
+//     });
+
+//   console.log('end of main');
+// };
+
+const main = async () => {
+  try {
+    const result = await getLatLonForPlaces(wonders);
+    console.log(result);
+  } catch (error) {
+    console.log(error);
+  }
+
+  console.log('end of main');
+};
+
+// const main = () => {
+//   setTimeout(() => {
+//     console.log('after the break');
+//   }, 1000);
+//   console.log('before the break');
+// };
+
+main();
